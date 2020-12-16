@@ -26,6 +26,8 @@
 
 package haven;
 
+import java.util.function.Consumer;
+
 public class CheckBox extends Widget {
     public static final Tex lbox = Resource.loadtex("gfx/hud/chkbox");
     public static final Tex lmark = Resource.loadtex("gfx/hud/chkmark");
@@ -34,31 +36,40 @@ public class CheckBox extends Widget {
     public final Tex box, mark;
     public final Coord loff;
     public boolean a = false;
+    private Consumer<Boolean> onChange;
     Text lbl;
 
     @RName("chk")
     public static class $_ implements Factory {
-	public Widget create(UI ui, Object[] args) {
-	    CheckBox ret = new CheckBox((String)args[0]);
-	    ret.canactivate = true;
-	    return(ret);
-	}
+        public Widget create(UI ui, Object[] args) {
+            CheckBox ret = new CheckBox((String) args[0]);
+            ret.canactivate = true;
+            return (ret);
+        }
     }
 
+    public CheckBox(String lbl, boolean lg, final Consumer<Boolean> onChange) {
+        this.lbl = Text.std.render(lbl, java.awt.Color.WHITE);
+        if (lg) {
+            box = lbox;
+            mark = lmark;
+            loff = new Coord(0, this.lbl.sz().y / 2);
+        } else {
+            box = sbox;
+            mark = smark;
+            loff = UI.scale(new Coord(5, 0));
+        }
+        sz = new Coord(box.sz().x + UI.scale(5) + this.lbl.sz().x, Math.max(box.sz().y, this.lbl.sz().y));
+        this.onChange = onChange;
+    }
+
+
     public CheckBox(String lbl, boolean lg) {
-	this.lbl = Text.std.render(lbl, java.awt.Color.WHITE);
-	if(lg) {
-	    box = lbox; mark = lmark;
-	    loff = new Coord(0, this.lbl.sz().y / 2);
-	} else {
-	    box = sbox; mark = smark;
-	    loff = UI.scale(new Coord(5, 0));
-	}
-	sz = new Coord(box.sz().x + UI.scale(5) + this.lbl.sz().x, Math.max(box.sz().y, this.lbl.sz().y));
+        this(lbl, lg, null);
     }
 
     public CheckBox(String lbl) {
-	this(lbl, false);
+        this(lbl, false, null);
     }
 
     public void draw(GOut g) {
@@ -71,36 +82,38 @@ public class CheckBox extends Widget {
     }
 
     public void changed(boolean val) {
-	if(canactivate)
-	    wdgmsg("ch", a ? 1 : 0);
+        if (canactivate)
+            wdgmsg("ch", a ? 1 : 0);
+        if (onChange != null)
+            onChange.accept(val);
     }
 
     public void set(boolean a) {
-	this.a = a;
-	changed(a);
+        this.a = a;
+        changed(a);
     }
 
     public void click() {
-	set(!a);
+        set(!a);
     }
 
     public boolean mousedown(Coord c, int button) {
-	if(button != 1)
-	    return(false);
-	click();
-	return(true);
+        if (button != 1)
+            return (false);
+        click();
+        return (true);
     }
 
     public boolean gkeytype(java.awt.event.KeyEvent ev) {
-	click();
-	return(true);
+        click();
+        return (true);
     }
 
     public void uimsg(String msg, Object... args) {
-	if(msg == "ch") {
-	    this.a = ((Integer)args[0]) != 0;
-	} else {
-	    super.uimsg(msg, args);
-	}
+        if (msg == "ch") {
+            this.a = ((Integer) args[0]) != 0;
+        } else {
+            super.uimsg(msg, args);
+        }
     }
 }
